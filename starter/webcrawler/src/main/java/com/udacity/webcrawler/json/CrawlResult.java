@@ -1,8 +1,5 @@
 package com.udacity.webcrawler.json;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,7 +8,6 @@ import java.util.Objects;
 /**
  * Data class representing the final result of a web crawl.
  */
-@JsonSerialize()
 public final class CrawlResult {
 
     private final Map<String, Integer> wordCounts;
@@ -66,7 +62,6 @@ public final class CrawlResult {
         /**
          * Sets the word counts. See {@link #getWordCounts()}
          */
-        @JsonProperty("wordCounts")
         public Builder setWordCounts(Map<String, Integer> wordCounts) {
             this.wordFrequencies = Objects.requireNonNull(wordCounts);
             return this;
@@ -75,7 +70,6 @@ public final class CrawlResult {
         /**
          * Sets the total number of URLs visited. See {@link #getUrlsVisited()}.
          */
-        @JsonProperty("urlsVisited")
         public Builder setUrlsVisited(int pageCount) {
             this.pageCount = pageCount;
             return this;
