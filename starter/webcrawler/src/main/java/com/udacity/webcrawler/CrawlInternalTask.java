@@ -23,6 +23,17 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
     private final Map<String, Integer> counts;
     private final Set<String> visitedUrls;
 
+    /**
+     *
+     * @param clock
+     * @param url
+     * @param deadline
+     * @param popularWordCount
+     * @param maxDepth
+     * @param ignoredUrls
+     * @param counts
+     * @param visitedUrls
+     */
     public CrawlInternalTask(Clock clock, String url,
                              Instant deadline,
                              int popularWordCount,
@@ -40,6 +51,10 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
         this.visitedUrls = visitedUrls;
     }
 
+    /**
+     * method crawl over the pages
+     * @return CrawlResult
+     */
     @Override
     protected CrawlResult compute() {
         if (maxDepth == 0 || clock.instant().isAfter(deadline)) {
@@ -95,38 +110,6 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
                 .build();
     }
 
-    public Clock getClock() {
-        return clock;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public Instant getDeadline() {
-        return deadline;
-    }
-
-    public int getPopularWordCount() {
-        return popularWordCount;
-    }
-
-    public int getMaxDepth() {
-        return maxDepth;
-    }
-
-    public List<Pattern> getIgnoredUrls() {
-        return ignoredUrls;
-    }
-
-    public Map<String, Integer> getCounts() {
-        return counts;
-    }
-
-    public Set<String> getVisitedUrls() {
-        return visitedUrls;
-    }
-
     public static final class Builder {
         private Clock clock;
         private String url;
@@ -137,46 +120,90 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
         private Map<String, Integer> counts;
         private Set<String> visitedUrls;
 
+        /**
+         * Setter method for clock
+         * @param clock
+         * @return Builder
+         */
         public Builder setClock(Clock clock) {
             this.clock = clock;
             return this;
         }
 
+        /**
+         * Setter method for url
+         * @param url
+         * @return Builder
+         */
         public Builder setUrl(String url) {
             this.url = url;
             return this;
         }
 
+        /**
+         * Setter method for deadline
+         * @param deadline
+         * @return Builder
+         */
         public Builder setDeadline(Instant deadline) {
             this.deadline = deadline;
             return this;
         }
 
+        /**
+         * Setter method for popularWordCount
+         * @param popularWordCount
+         * @return Builder
+         */
         public Builder setPopularWordCount(int popularWordCount) {
             this.popularWordCount = popularWordCount;
             return this;
         }
 
+        /**
+         * Setter method for maxDepth
+         * @param maxDepth
+         * @return Builder
+         */
         public Builder setMaxDepth(int maxDepth) {
             this.maxDepth = maxDepth;
             return this;
         }
 
+        /**
+         * Setter method for ignoredUrls
+         * @param ignoredUrls
+         * @return Builder
+         */
         public Builder setIgnoredUrls(List<Pattern> ignoredUrls) {
             this.ignoredUrls = ignoredUrls;
             return this;
         }
 
+        /**
+         * Setter method for counts
+         * @param counts
+         * @return Builder
+         */
         public Builder setCounts(Map<String, Integer> counts) {
             this.counts = counts;
             return this;
         }
 
+        /**
+         * Setter method for visited Urls
+         * @param visitedUrls
+         * @return Builder
+         */
         public Builder setVisitedUrls(Set<String> visitedUrls) {
             this.visitedUrls = visitedUrls;
             return this;
         }
 
+        /**
+         * build method for CrawlInternalTask
+         * @return CrawlInternalTask
+         */
         public CrawlInternalTask build() {
             return new CrawlInternalTask(clock,
                     url,

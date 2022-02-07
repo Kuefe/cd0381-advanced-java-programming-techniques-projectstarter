@@ -28,6 +28,16 @@ final class ParallelWebCrawler implements WebCrawler {
     private final int maxDepth;
     private final ForkJoinPool pool;
 
+    /**
+     * Initialize ParallelWebCrawler
+     * @param clock
+     * @param parserFactory
+     * @param timeout
+     * @param popularWordCount
+     * @param ignoredUrls
+     * @param maxDepth
+     * @param threadCount
+     */
     @Inject
     ParallelWebCrawler(
             Clock clock,
@@ -38,7 +48,7 @@ final class ParallelWebCrawler implements WebCrawler {
             @MaxDepth int maxDepth,
             @TargetParallelism int threadCount) {
         this.clock = clock;
-        this.parserFactory = parserFactory;
+        ParallelWebCrawler.parserFactory = parserFactory;
         this.timeout = timeout;
         this.popularWordCount = popularWordCount;
         this.ignoredUrls = ignoredUrls;
@@ -46,6 +56,11 @@ final class ParallelWebCrawler implements WebCrawler {
         this.pool = new ForkJoinPool(Math.min(threadCount, getMaxParallelism()));
     }
 
+    /**
+     * crawl the startingUrls
+     * @param startingUrls the starting points of the crawl.
+     * @return CrawlResult
+     */
     @Override
     public CrawlResult crawl(List<String> startingUrls) {
         Instant deadline = clock.instant().plus(timeout);
@@ -55,13 +70,13 @@ final class ParallelWebCrawler implements WebCrawler {
         List<CrawlResult> resultList = new LinkedList<>();
         resultList.add(new CrawlResult.Builder()
                 .setWordCounts(counts)
-                .setUrlsVisited(visitedUrls.size())
+                .setUrlsVisited(0)
                 .build());
 
         if (maxDepth < 1) {
             return new CrawlResult.Builder()
                     .setWordCounts(counts)
-                    .setUrlsVisited(visitedUrls.size())
+                    .setUrlsVisited(0)
                     .build();
         }
 
@@ -81,9 +96,7 @@ final class ParallelWebCrawler implements WebCrawler {
 
         for (CrawlResult result : resultList) {
             counts.putAll(result.getWordCounts());
-            for (String url : visitedUrls) {
-                visitedUrls.add(url);
-            }
+            visitedUrls.addAll(visitedUrls);
         }
 
         if (counts.size() >= 1) {
@@ -99,6 +112,11 @@ final class ParallelWebCrawler implements WebCrawler {
         }
     }
 
+    /**
+     * Check if the url match to ignore pattern
+     * @param url
+     * @return Boolean
+     */
     private Boolean isNotIgnoredUrls(String url) {
         for (Pattern pattern : ignoredUrls) {
             if (pattern.matcher(url).matches()) {
@@ -108,11 +126,22 @@ final class ParallelWebCrawler implements WebCrawler {
         return TRUE;
     }
 
+    /**
+     * add the url to the result
+     * @param url
+     * @param counts
+     * @param visitedUrls
+     * @return PageParser.Result
+     */
     static PageParser.Result addToResult(String url, Map<String, Integer> counts, Set<String> visitedUrls) {
         visitedUrls.add(url);
         return parserFactory.get(url).parse();
     }
 
+    /**
+     * get max. parallelism based on the available processors
+     * @return int
+     */
     @Override
     public int getMaxParallelism() {
         return Runtime.getRuntime().availableProcessors();
