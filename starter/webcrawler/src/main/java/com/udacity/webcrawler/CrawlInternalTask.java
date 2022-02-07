@@ -63,6 +63,7 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
                     .build();
         }
 
+        visitedUrls.add(url);
         PageParser.Result result = ParallelWebCrawler.addToResult(url, counts, visitedUrls);
 
         for (Map.Entry<String, Integer> e : result.getWordCounts().entrySet()) {
@@ -72,6 +73,7 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
                 counts.put(e.getKey(), e.getValue());
             }
         }
+
         Stream<String> subLinks = result.getLinks().stream();
 
         List<CrawlInternalTask> subtasks =
@@ -85,13 +87,6 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
                                 visitedUrls))
                         .collect(Collectors.toList());
         invokeAll(subtasks);
-
-        if (counts.isEmpty()) {
-            return new CrawlResult.Builder()
-                    .setWordCounts(counts)
-                    .setUrlsVisited(visitedUrls.size())
-                    .build();
-        }
 
         return new CrawlResult.Builder()
                 .setWordCounts(WordCounts.sort(counts, popularWordCount))

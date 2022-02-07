@@ -58,14 +58,15 @@ final class ParallelWebCrawler implements WebCrawler {
                 .setUrlsVisited(visitedUrls.size())
                 .build());
 
+        if (maxDepth < 1) {
+            return new CrawlResult.Builder()
+                    .setWordCounts(counts)
+                    .setUrlsVisited(visitedUrls.size())
+                    .build();
+        }
+
         for (String url : startingUrls) {
-            Boolean isIgnoredUrls = FALSE;
-            for (Pattern pattern : ignoredUrls) {
-                if (pattern.matcher(url).matches()) {
-                    isIgnoredUrls = TRUE;
-                }
-            }
-            if (!url.isEmpty() && url != null && maxDepth > 0 && !isIgnoredUrls) {
+            if (isNotIgnoredUrls(url)) {
                 resultList.add(pool.invoke(new CrawlInternalTask(clock,
                         url,
                         deadline,
@@ -77,29 +78,33 @@ final class ParallelWebCrawler implements WebCrawler {
             }
         }
 
-        Map<String, Integer> wordCounts = new HashMap<String, Integer>();
-        Set<String> visitUrls = new HashSet<>();
-
         for (CrawlResult result : resultList) {
-            wordCounts.putAll(result.getWordCounts());
-            for (String url: visitedUrls) {
-                visitUrls.add(url);
+            counts.putAll(result.getWordCounts());
+            for (String url : visitedUrls) {
+                visitedUrls.add(url);
             }
         }
 
-        if (wordCounts.size() >= 1) {
+        if (counts.size() >= 1) {
             return new CrawlResult.Builder()
-                    .setWordCounts(WordCounts.sort(wordCounts, popularWordCount))
-                    .setUrlsVisited(visitUrls.size())
+                    .setWordCounts(WordCounts.sort(counts, popularWordCount))
+                    .setUrlsVisited(visitedUrls.size())
                     .build();
         } else {
             return new CrawlResult.Builder()
                     .setWordCounts(counts)
-                    .setUrlsVisited(visitUrls.size())
+                    .setUrlsVisited(visitedUrls.size())
                     .build();
         }
+    }
 
-
+    private Boolean isNotIgnoredUrls(String url) {
+        for (Pattern pattern : ignoredUrls) {
+            if (pattern.matcher(url).matches()) {
+                return FALSE;
+            }
+        }
+        return TRUE;
     }
 
     static PageParser.Result addToResult(String url, Map<String, Integer> counts, Set<String> visitedUrls) {
