@@ -77,14 +77,15 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
         Stream<String> subLinks = result.getLinks().stream();
 
         List<CrawlInternalTask> subtasks =
-                subLinks.map(url -> new CrawlInternalTask(clock,
-                                url,
-                                deadline,
-                                popularWordCount,
-                                maxDepth - 1,
-                                ignoredUrls,
-                                counts,
-                                visitedUrls))
+                subLinks.map(url -> new CrawlInternalTask.Builder()
+                                .setClock(clock)
+                                .setUrl(url)
+                                .setDeadline(deadline)
+                                .setPopularWordCount(popularWordCount)
+                                .setMaxDepth(maxDepth - 1)
+                                .setIgnoredUrls(ignoredUrls)
+                                .setCounts(counts)
+                                .setVisitedUrls(visitedUrls).build())
                         .collect(Collectors.toList());
         invokeAll(subtasks);
 
@@ -94,4 +95,97 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
                 .build();
     }
 
+    public Clock getClock() {
+        return clock;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public Instant getDeadline() {
+        return deadline;
+    }
+
+    public int getPopularWordCount() {
+        return popularWordCount;
+    }
+
+    public int getMaxDepth() {
+        return maxDepth;
+    }
+
+    public List<Pattern> getIgnoredUrls() {
+        return ignoredUrls;
+    }
+
+    public Map<String, Integer> getCounts() {
+        return counts;
+    }
+
+    public Set<String> getVisitedUrls() {
+        return visitedUrls;
+    }
+
+    public static final class Builder {
+        private Clock clock;
+        private String url;
+        private Instant deadline;
+        private int popularWordCount;
+        private int maxDepth;
+        private List<Pattern> ignoredUrls;
+        private Map<String, Integer> counts;
+        private Set<String> visitedUrls;
+
+        public Builder setClock(Clock clock) {
+            this.clock = clock;
+            return this;
+        }
+
+        public Builder setUrl(String url) {
+            this.url = url;
+            return this;
+        }
+
+        public Builder setDeadline(Instant deadline) {
+            this.deadline = deadline;
+            return this;
+        }
+
+        public Builder setPopularWordCount(int popularWordCount) {
+            this.popularWordCount = popularWordCount;
+            return this;
+        }
+
+        public Builder setMaxDepth(int maxDepth) {
+            this.maxDepth = maxDepth;
+            return this;
+        }
+
+        public Builder setIgnoredUrls(List<Pattern> ignoredUrls) {
+            this.ignoredUrls = ignoredUrls;
+            return this;
+        }
+
+        public Builder setCounts(Map<String, Integer> counts) {
+            this.counts = counts;
+            return this;
+        }
+
+        public Builder setVisitedUrls(Set<String> visitedUrls) {
+            this.visitedUrls = visitedUrls;
+            return this;
+        }
+
+        public CrawlInternalTask build() {
+            return new CrawlInternalTask(clock,
+                    url,
+                    deadline,
+                    popularWordCount,
+                    maxDepth,
+                    ignoredUrls,
+                    counts,
+                    visitedUrls);
+        }
+    }
 }

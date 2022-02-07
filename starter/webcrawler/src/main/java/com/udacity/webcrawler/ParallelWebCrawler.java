@@ -67,14 +67,15 @@ final class ParallelWebCrawler implements WebCrawler {
 
         for (String url : startingUrls) {
             if (isNotIgnoredUrls(url)) {
-                resultList.add(pool.invoke(new CrawlInternalTask(clock,
-                        url,
-                        deadline,
-                        popularWordCount,
-                        maxDepth,
-                        ignoredUrls,
-                        counts,
-                        visitedUrls)));
+                resultList.add(pool.invoke(new CrawlInternalTask.Builder()
+                        .setClock(clock)
+                        .setUrl(url)
+                        .setDeadline(deadline)
+                        .setPopularWordCount(popularWordCount)
+                        .setMaxDepth(maxDepth)
+                        .setIgnoredUrls(ignoredUrls)
+                        .setCounts(counts)
+                        .setVisitedUrls(visitedUrls).build()));
             }
         }
 
