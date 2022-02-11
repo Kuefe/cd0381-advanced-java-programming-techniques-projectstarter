@@ -11,6 +11,39 @@ Q1. Run the web crawler using the configurations located at src/main/config/writ
 
     Why did the parser take more time when run with ParallelWebCrawler?
 
+Answer Q1.
+One of my test results:
+Sequential crawler
+{"wordCounts":{"udacity":40,"school":16,"data":15,"enterprise":14,"engineer":12},"urlsVisited":2}
+Run at Fri, 11 Feb 2022 09:43:41 GMT
+com.udacity.webcrawler.SequentialWebCrawler#crawl took 0m 2s 236ms
+com.udacity.webcrawler.parser.PageParserImpl#parse took 0m 2s 201ms
+
+Parallel crawler
+{"wordCounts":{"udacity":60,"school":33,"cloud":32,"with":26,"enterprise":24},"urlsVisited":3}
+Run at Fri, 11 Feb 2022 09:44:02 GMT
+com.udacity.webcrawler.ParallelWebCrawler#crawl took 0m 2s 767ms
+com.udacity.webcrawler.parser.PageParserImpl#parse took 0m 3s 91ms
+
+The parallel crawler visited more webpages and parsed them as the sequential crawler.
+The duration of the method parse is calculated from the start time of the 1st thread
+and the termination of the last thread.
+
+parallel crawler:
+In my test result the method runs parallel 3 times.
+The starting time of these threads are under the "timeoutSeconds" of 2.
+My computer has two processors.
+So two parse threads can run in parallel and after one of them is finished,
+the next one can be started.
+So the parallel crawler takes more time for parsing, but he visited more pages.
+The parallel crawler needs on average about 1s 30ms for parsing a page.
+
+sequential crawler:
+In my test result the method runs parallel 2 times.
+The run on after the other.
+The sequential crawler needs on average about 1s 100ms for parsing a page.
+So this crawler is a little slower.
+
 
 Q2. Your manager ran your crawler on her old personal computer, using the configurations from Q1, and she notices that
     the sequential crawler actually outperforms the parallel crawler. She would like to know why.
@@ -21,6 +54,19 @@ Q2. Your manager ran your crawler on her old personal computer, using the config
     (b) Suggest one scenario in which the parallel web crawler will almost certainly perform better than the sequential
         crawler. Why will it perform better?
 
+Answer Q2. (a)
+In the course are mention the limits of parallelism:
+"Threads can also be expensive to create and maintain:
+ - Each thread needs to have memory allocated for its call stack.
+ - Since threads require operating system support, Java needs to make system calls to create and register new threads with the operating system. System calls are slow!
+ - Java also internally tracks threads you create. This tracking requires some amount of time and memory."
+
+So the parallelCrawler needs more memory and more computer performance.
+This takes time, and that is why the parallel crawler is slower than the sequential crawler.
+
+Answer Q2. (b)
+I think the parallel webcrawler perform better on a computer with more processors.
+
 
 Q3. Analyze your method profiler through the lens of Aspect Oriented Programming, by answering the following questions:
 
@@ -28,11 +74,58 @@ Q3. Analyze your method profiler through the lens of Aspect Oriented Programming
 
     (b) What are the join points of the Profiler in the web crawler program?
 
+Answer Q3. (a)
+Performance profiling is the cross-cutting concern.
+
+Answer Q3. (b)
+The method invoke()
 
 Q4. Identify three (3) different design patterns used in this project, and explain which interfaces, classes, and/or
     libraries use or implement those design patterns.
 
     For each pattern, name one thing about the pattern that you LIKED, and one thing you DISLIKED. If you did not like
     anything, you can name two things you disliked.
+
+Answer Q4.
+
+Abstract factory:
+PageParserFactory (interface)
+PageParserFactoryImpl (implements PageParserFactory)
+PageParser (interface)
+PageParserImpl (implements PageParser)
+
+LIKED:
+The call "parserFactory.get(url).parse();" has only one parameter.
+PageParser delegate = new PageParserImpl(url, timeout, ignoredWords);
+The other parameters are preset and can't change.
+
+DISLIKED:
+I think it is difficult to make changes.
+
+Builder pattern:
+CrawlerConfiguration
+
+CrawlerConfiguration config =
+     new CrawlerConfiguration.Builder()
+         .setImplementationOverride(SequentialWebCrawler.class.getName())
+         .setParallelism(12)
+         .build();
+
+LIKED:
+It is easier to instantiate an object, because you must not observe the order of the parameter
+
+DISLIKED:
+It is more coding.
+
+Dependency Injection
+WebCrawlerMain
+WebCrawlerModule
+import com.google.inject.Guice;
+
+LIKED:
+When you use a library you must write the code one more time.
+DISLIKED:
+When the library contains errors or will not be further developed.
+So it is important to look, if the library has a good community.
 
 
