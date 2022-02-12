@@ -11,6 +11,7 @@ import com.udacity.webcrawler.profiler.Profiler;
 import com.udacity.webcrawler.profiler.ProfilerModule;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -29,7 +30,7 @@ public final class WebCrawlerMain {
     @Inject
     private Profiler profiler;
 
-    private void run() throws Exception {
+    private void run() throws IOException {
         Guice.createInjector(new WebCrawlerModule(config), new ProfilerModule()).injectMembers(this);
 
         CrawlResult result = crawler.crawl(config.getStartPages());
@@ -43,20 +44,27 @@ public final class WebCrawlerMain {
         }
 
         String profilePath = config.getProfileOutputPath();
+
         if (profilePath.isEmpty()) {
             profiler.writeData(new OutputStreamWriter(System.out));
+
         } else {
             profiler.writeData(Path.of(profilePath));
         }
-     }
 
-    public static void main(String[] args) throws Exception {
+    }
+
+    public static void main(String[] args) throws IOException {
         if (args.length != 1) {
             System.out.println("Usage: WebCrawlerMain [starting-url]");
             return;
         }
 
         CrawlerConfiguration config = new ConfigurationLoader(Path.of(args[0])).load();
-        new WebCrawlerMain(config).run();
+        try {
+            new WebCrawlerMain(config).run();
+        } catch (IOException ex) {
+            throw new IOException("Can't write to 'profileOutputPath'");
+        }
     }
 }

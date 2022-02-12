@@ -9,6 +9,9 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ForkJoinPool;
 import java.util.regex.Pattern;
 
@@ -64,8 +67,8 @@ final class ParallelWebCrawler implements WebCrawler {
     @Override
     public CrawlResult crawl(List<String> startingUrls) {
         Instant deadline = clock.instant().plus(timeout);
-        Map<String, Integer> counts = new HashMap<>();
-        Set<String> visitedUrls = new HashSet<>();
+        ConcurrentMap<String, Integer> counts = new ConcurrentHashMap<>();
+        ConcurrentSkipListSet<String> visitedUrls = new ConcurrentSkipListSet<>();
 
         List<CrawlResult> resultList = new LinkedList<>();
         resultList.add(new CrawlResult.Builder()

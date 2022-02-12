@@ -6,8 +6,8 @@ import com.udacity.webcrawler.parser.PageParser;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.RecursiveTask;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -20,9 +20,10 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
     private final int popularWordCount;
     private final int maxDepth;
     private final List<Pattern> ignoredUrls;
-    private final Map<String, Integer> counts;
-    private final Set<String> visitedUrls;
-
+//    private final Map<String, Integer> counts;
+//    private final Set<String> visitedUrls;
+    private final ConcurrentMap<String, Integer> counts;
+    private final ConcurrentSkipListSet<String> visitedUrls;
     /**
      *
      * @param clock
@@ -39,8 +40,8 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
                              int popularWordCount,
                              int maxDepth,
                              List<Pattern> ignoredUrls,
-                             Map<String, Integer> counts,
-                             Set<String> visitedUrls) {
+                             ConcurrentMap<String, Integer> counts,
+                             ConcurrentSkipListSet<String> visitedUrls) {
         this.clock = clock;
         this.url = url;
         this.deadline = deadline;
@@ -57,6 +58,7 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
      */
     @Override
     protected CrawlResult compute() {
+
         if (maxDepth == 0 || clock.instant().isAfter(deadline)) {
             return new CrawlResult.Builder()
                     .setWordCounts(WordCounts.sort(counts, popularWordCount))
@@ -81,7 +83,7 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
         visitedUrls.add(url);
         PageParser.Result result = ParallelWebCrawler.addToResult(url, counts, visitedUrls);
 
-        for (Map.Entry<String, Integer> e : result.getWordCounts().entrySet()) {
+        for (ConcurrentMap.Entry<String, Integer> e : result.getWordCounts().entrySet()) {
             if (counts.containsKey(e.getKey())) {
                 counts.put(e.getKey(), e.getValue() + counts.get(e.getKey()));
             } else {
@@ -117,8 +119,8 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
         private int popularWordCount;
         private int maxDepth;
         private List<Pattern> ignoredUrls;
-        private Map<String, Integer> counts;
-        private Set<String> visitedUrls;
+        private ConcurrentMap<String, Integer> counts;
+        private ConcurrentSkipListSet<String> visitedUrls;
 
         /**
          * Setter method for clock
@@ -185,7 +187,7 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
          * @param counts
          * @return Builder
          */
-        public Builder setCounts(Map<String, Integer> counts) {
+        public Builder setCounts(ConcurrentMap<String, Integer> counts) {
             this.counts = counts;
             return this;
         }
@@ -195,7 +197,7 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
          * @param visitedUrls
          * @return Builder
          */
-        public Builder setVisitedUrls(Set<String> visitedUrls) {
+        public Builder setVisitedUrls(ConcurrentSkipListSet<String> visitedUrls) {
             this.visitedUrls = visitedUrls;
             return this;
         }
