@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -20,10 +21,9 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
     private final int popularWordCount;
     private final int maxDepth;
     private final List<Pattern> ignoredUrls;
-//    private final Map<String, Integer> counts;
-//    private final Set<String> visitedUrls;
     private final ConcurrentMap<String, Integer> counts;
     private final ConcurrentSkipListSet<String> visitedUrls;
+    private final ReentrantLock lock = new ReentrantLock();
     /**
      *
      * @param clock
@@ -73,39 +73,45 @@ public class CrawlInternalTask extends RecursiveTask<CrawlResult> {
                         .build();
             }
         }
-        if (visitedUrls.contains(url)) {
-            return new CrawlResult.Builder()
-                    .setWordCounts(WordCounts.sort(counts, popularWordCount))
-                    .setUrlsVisited(visitedUrls.size())
-                    .build();
-        }
-
-        visitedUrls.add(url);
-        PageParser.Result result = ParallelWebCrawler.addToResult(url, counts, visitedUrls);
-
-        for (ConcurrentMap.Entry<String, Integer> e : result.getWordCounts().entrySet()) {
-            if (counts.containsKey(e.getKey())) {
-                counts.put(e.getKey(), e.getValue() + counts.get(e.getKey()));
-            } else {
-                counts.put(e.getKey(), e.getValue());
+        try {
+            lock.lock();
+            if (visitedUrls.contains(url)) {
+                return new CrawlResult.Builder()
+                        .setWordCounts(WordCounts.sort(counts, popularWordCount))
+                        .setUrlsVisited(visitedUrls.size())
+                        .build();
             }
+            visitedUrls.add(url);
+            PageParser.Result result = ParallelWebCrawler.addToResult(url, counts, visitedUrls);
+
+            for (ConcurrentMap.Entry<String, Integer> e : result.getWordCounts().entrySet()) {
+                if (counts.containsKey(e.getKey())) {
+                    counts.put(e.getKey(), e.getValue() + counts.get(e.getKey()));
+                } else {
+                    counts.put(e.getKey(), e.getValue());
+                }
+            }
+
+            Stream<String> subLinks = result.getLinks().stream();
+
+            List<CrawlInternalTask> subtasks =
+                    subLinks.map(url -> new CrawlInternalTask.Builder()
+                                    .setClock(clock)
+                                    .setUrl(url)
+                                    .setDeadline(deadline)
+                                    .setPopularWordCount(popularWordCount)
+                                    .setMaxDepth(maxDepth - 1)
+                                    .setIgnoredUrls(ignoredUrls)
+                                    .setCounts(counts)
+                                    .setVisitedUrls(visitedUrls).build())
+                            .collect(Collectors.toList());
+            invokeAll(subtasks);
+
+        } catch(Exception ex) {
+            ex.getLocalizedMessage();
+        }finally {
+            lock.unlock();
         }
-
-        Stream<String> subLinks = result.getLinks().stream();
-
-        List<CrawlInternalTask> subtasks =
-                subLinks.map(url -> new CrawlInternalTask.Builder()
-                                .setClock(clock)
-                                .setUrl(url)
-                                .setDeadline(deadline)
-                                .setPopularWordCount(popularWordCount)
-                                .setMaxDepth(maxDepth - 1)
-                                .setIgnoredUrls(ignoredUrls)
-                                .setCounts(counts)
-                                .setVisitedUrls(visitedUrls).build())
-                        .collect(Collectors.toList());
-        invokeAll(subtasks);
-
         return new CrawlResult.Builder()
                 .setWordCounts(WordCounts.sort(counts, popularWordCount))
                 .setUrlsVisited(visitedUrls.size())
